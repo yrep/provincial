@@ -12,6 +12,7 @@ node_modules
 pnpm-lock.yaml
 pnpm-workspace.yaml
 collect.py
+svelte.config.js
 
 
 # OS
