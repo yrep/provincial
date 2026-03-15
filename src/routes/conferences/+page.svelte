@@ -13,6 +13,18 @@
   let filters = $state<{ country?: string; event_date?: string; upcoming?: boolean }>({});
   let availableCountries = $state<string[]>([]);
 
+
+
+  async function loadAllCountries() {
+    try {
+      const data = await getConferences(1, 500);
+      const uniqueCountries = [...new Set(data.items.map(i => i.country).filter(Boolean))].sort();
+      availableCountries = uniqueCountries;
+    } catch (e) {
+      console.error('Failed to load countries', e);
+    }
+  }
+
   function parseDate(dateStr: string): Date {
     const months: Record<string, number> = {
       january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
@@ -57,15 +69,22 @@
       const data = await getConferences(currentPage, 20, filters.country ? { country: filters.country } : undefined);
       items = data.items;
       totalPages = data.totalPages;
-      if (items.length > 0) {
-        availableCountries = [...new Set(items.map(i => i.country).filter(Boolean))].sort();
-      }
+      // if (items.length > 0) {
+      //   availableCountries = [...new Set(items.map(i => i.country).filter(Boolean))].sort();
+      // }
     } catch (e) {
       console.error('Failed to load conferences', e);
     } finally {
       loading = false;
     }
   }
+
+
+
+
+
+
+
 
   function handleApply(newFilters: Record<string, any>) {
     filters = {
@@ -89,6 +108,7 @@
   }
 
   onMount(() => {
+    loadAllCountries();
     loadConferences();
   });
 </script>
