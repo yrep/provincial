@@ -4,11 +4,11 @@
   let isMenuOpen = $state(false);
 </script>
 
-<div class="navbar bg-base-100 shadow-lg px-4">
+<div class="navbar bg-base-100 shadow-lg px-4 py-4">
   <div class="navbar-start">
-    <a href="/" class="btn btn-ghost text-xl">
-      <img src="/logo.png" alt="Provincial" class="h-6 w-6 mr-2" />
-      Provincial
+    <a href="/" class="btn btn-ghost text-xl provincial-logo">
+      <img src="/logo.svg" alt="Provincial" class="h-16 w-16 mr-2" />
+      Provincial s.r.o
     </a>
   </div>
   
