@@ -1,18 +1,21 @@
-
-export default config;
-
 import adapterAuto from '@sveltejs/adapter-auto';
 import adapterNode from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const isServer = process.env.IS_SERVER === 'true';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	kit: {
-		adapter: isServer ? adapterNode() : adapterAuto()
-	}
+  preprocess: vitePreprocess(),
+  kit: {
+    adapter: isServer ? adapterNode() : adapterAuto(),
+    alias: {
+      $lib: './src/lib'
+    }
+  }
 };
 
+export default config;
 // import adapter from '@sveltejs/adapter-node';
 
 // /** @type {import('@sveltejs/kit').Config} */
@@ -24,3 +27,4 @@ const config = {
 // 		adapter: adapter()
 // 	}
 // };
+// export default config;
