@@ -22,7 +22,7 @@
       <p>Provincial s.r.o. (ID: 19287321)</p>
       <p>Jaltska 1107/14, 360 01 Karlovy Vary</p>
       <p>Czech Republic</p>
-      <p>Email: info@aparteu.com</p>
+      <p>Email: provincialcz@gmail.com</p>
       <p>Phone: +420 607 191 489</p>
     </nav>
   </div>
