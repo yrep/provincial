@@ -12,7 +12,7 @@
   async function loadPartners() {
     loading = true;
     try {
-      const data = await getPartners(currentPage, 20);
+      const data = await getPartners(currentPage, 21);
       items = data.items;
       totalPages = data.totalPages;
     } catch (e) {
