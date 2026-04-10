@@ -10,14 +10,13 @@
   let currentPage = $state(1);
   let totalPages = $state(0);
   let loading = $state(false);
-  let filters = $state<{ country?: string; event_date?: string; upcoming?: boolean }>({});
+  let filters = $state<{ country?: string; startDateFrom?: string; startDateTo?: string; upcoming?: boolean }>({});
   let availableCountries = $state<string[]>([]);
-
-
 
   async function loadAllCountries() {
     try {
-      const data = await getConferences(1, 500);
+      // Загружаем все конференции без пагинации только для получения списка стран
+      const data = await getConferences({ perPage: 500 });
       const uniqueCountries = [...new Set(data.items.map(i => i.country).filter(Boolean))].sort();
       availableCountries = uniqueCountries;
     } catch (e) {
@@ -25,53 +24,20 @@
     }
   }
 
-  function parseDate(dateStr: string): Date {
-    const months: Record<string, number> = {
-      january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
-      july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
-    };
-    const parts = dateStr.split(' ');
-    if (parts.length !== 3) return new Date(0);
-    const day = parseInt(parts[0].replace(/\D/g, ''), 10);
-    const month = months[parts[1].toLowerCase()];
-    const year = parseInt(parts[2], 10);
-    return new Date(year, month, day);
-  }
-
-  function isUpcoming(conf: Conference): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return parseDate(conf.event_date) >= today;
-  }
-
-  function matchesDate(conf: Conference, filterDateStr: string): boolean {
-    const filterDate = new Date(filterDateStr);
-    filterDate.setHours(0, 0, 0, 0);
-    const confDate = parseDate(conf.event_date);
-    confDate.setHours(0, 0, 0, 0);
-    return confDate >= filterDate;
-  }
-
-  let displayedItems = $derived(() => {
-    let result = items;
-    if (filters.upcoming) {
-      result = result.filter(isUpcoming);
-    }
-    if (filters.event_date) {
-      result = result.filter(c => matchesDate(c, filters.event_date!));
-    }
-    return result;
-  });
-
   async function loadConferences() {
     loading = true;
     try {
-      const data = await getConferences(currentPage, 20, filters.country ? { country: filters.country } : undefined);
+      const params: Record<string, any> = {
+        page: currentPage,
+        perPage: 20,
+      };
+      if (filters.country) params.country = filters.country;
+      if (filters.startDateFrom) params.startDateFrom = filters.startDateFrom;
+      if (filters.startDateTo) params.startDateTo = filters.startDateTo;
+
+      const data = await getConferences(params);
       items = data.items;
       totalPages = data.totalPages;
-      // if (items.length > 0) {
-      //   availableCountries = [...new Set(items.map(i => i.country).filter(Boolean))].sort();
-      // }
     } catch (e) {
       console.error('Failed to load conferences', e);
     } finally {
@@ -79,18 +45,12 @@
     }
   }
 
-
-
-
-
-
-
-
   function handleApply(newFilters: Record<string, any>) {
     filters = {
-      country: newFilters.country || undefined,
-      event_date: newFilters.event_date || undefined,
-      upcoming: newFilters.upcoming || false
+      country: newFilters.country,
+      startDateFrom: newFilters.startDateFrom,
+      startDateTo: newFilters.startDateTo,
+      upcoming: newFilters.upcoming,
     };
     currentPage = 1;
     loadConferences();
@@ -118,7 +78,7 @@
 <FilterBar
   fields={[
     { type: 'country', label: 'Country', key: 'country' },
-    { type: 'date', label: 'Event date', key: 'event_date' },
+    { type: 'dateRange', label: 'Start date', keyFrom: 'startDateFrom', keyTo: 'startDateTo' },
     { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' }
   ]}
   {availableCountries}
@@ -133,7 +93,7 @@
   </div>
 {:else}
   <EntityList
-    items={displayedItems()}
+    items={items}
     {currentPage}
     {totalPages}
     onPageChange={handlePageChange}

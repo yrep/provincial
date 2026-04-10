@@ -1,73 +1,80 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  type FilterField = {
-    type: 'country' | 'year' | 'date' | 'checkbox';
-    label: string;
-    key: string;
-    options?: any;
-  };
+  type FilterField = 
+    | { type: 'country'; label: string; key: string }
+    | { type: 'dateRange'; label: string; keyFrom: string; keyTo: string }
+    | { type: 'checkbox'; label: string; key: string };
 
   interface Props {
     fields: FilterField[];
     availableCountries?: string[];
-    availableYears?: number[];
     onApply: (filters: Record<string, any>) => void;
     onReset: () => void;
     initialValues?: Record<string, any>;
   }
 
-  let { fields, availableCountries = [], availableYears = [], onApply, onReset, initialValues = {} }: Props = $props();
+  let {
+    fields,
+    availableCountries = [],
+    onApply,
+    onReset,
+    initialValues = {}
+  }: Props = $props();
 
+  // Локальное состояние фильтров
   let values = $state<Record<string, any>>({});
 
+  // Инициализация значений из initialValues или значений по умолчанию
   function initValues() {
     const newValues: Record<string, any> = {};
-    fields.forEach(field => {
-      if (field.key in initialValues) {
-        newValues[field.key] = initialValues[field.key];
-      } else {
-        if (field.type === 'country' || field.type === 'year' || field.type === 'date') {
-          newValues[field.key] = '';
-        } else if (field.type === 'checkbox') {
-          newValues[field.key] = false;
-        }
+    for (const field of fields) {
+      if (field.type === 'country') {
+        newValues[field.key] = initialValues[field.key] ?? '';
+      } else if (field.type === 'dateRange') {
+        newValues[field.keyFrom] = initialValues[field.keyFrom] ?? '';
+        newValues[field.keyTo] = initialValues[field.keyTo] ?? '';
+      } else if (field.type === 'checkbox') {
+        newValues[field.key] = initialValues[field.key] ?? false;
       }
-    });
+    }
     values = newValues;
   }
 
+  // При изменении initialValues снаружи переинициализируем форму
   $effect(() => {
     initValues();
   });
 
-  let datePickerId = `date-${Math.random().toString(36).substring(2, 9)}`;
+  // Сегодняшняя дата в формате YYYY-MM-DD
+  const today = $derived(new Date().toISOString().split('T')[0]);
 
+  // Обработчик применения фильтров
   function applyFilter() {
     const result: Record<string, any> = {};
-    fields.forEach(field => {
-      result[field.key] = values[field.key];
-    });
+    for (const field of fields) {
+      if (field.type === 'country') {
+        result[field.key] = values[field.key] || undefined;
+      } else if (field.type === 'dateRange') {
+        result[field.keyFrom] = values[field.keyFrom] || undefined;
+        result[field.keyTo] = values[field.keyTo] || undefined;
+      } else if (field.type === 'checkbox') {
+        result[field.key] = values[field.key] || false;
+        // Если чекбокс "only upcoming", автоматически подставляем сегодня в dateFrom
+        if (field.key === 'upcoming' && values[field.key]) {
+          const dateRangeField = fields.find(f => f.type === 'dateRange');
+          if (dateRangeField && dateRangeField.type === 'dateRange') {
+            result[dateRangeField.keyFrom] = today;
+          }
+        }
+      }
+    }
     onApply(result);
   }
 
   function resetFilter() {
     initValues();
     onReset();
-  }
-
-  function handleDateChange(e: Event) {
-    const target = e.target as HTMLElement & { value: string };
-    values['event_date'] = target.value;
-    const button = document.getElementById(datePickerId);
-    if (button) {
-      if (target.value) {
-        const [year, month, day] = target.value.split('-');
-        button.innerText = `${day}.${month}.${year}`;
-      } else {
-        button.innerText = 'Pick a date';
-      }
-    }
   }
 </script>
 
@@ -83,41 +90,22 @@
           {/each}
         </select>
       </label>
-    {:else if field.type === 'year'}
-      <label class="form-control w-full max-w-xs">
-        <span class="label-text">{field.label}</span>
-        <select class="select select-bordered" bind:value={values[field.key]}>
-          <option value="">All years</option>
-          {#each availableYears as year}
-            <option value={year}>{year}</option>
-          {/each}
-        </select>
-      </label>
-    {:else if field.type === 'date'}
+    {:else if field.type === 'dateRange'}
       <div class="form-control w-full max-w-xs">
-        <span class="label-text">{field.label}</span>
-        <button
-          id={datePickerId}
-          popovertarget="cally-popover"
-          class="input input-bordered text-left"
-          style="anchor-name:--cally"
-        >
-          {values[field.key] ? (() => {
-            const [y, m, d] = values[field.key].split('-');
-            return `${d}.${m}.${y}`;
-          })() : 'Pick a date'}
-        </button>
-        <div
-          popover
-          id="cally-popover"
-          class="dropdown bg-base-100 rounded-box shadow-lg"
-          style="position-anchor:--cally"
-        >
-          <calendar-date class="cally" onchange={handleDateChange}>
-            <svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
-            <svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
-            <calendar-month></calendar-month>
-          </calendar-date>
+        <span class="label-text">{field.label} (from → to)</span>
+        <div class="flex gap-2">
+          <input
+            type="date"
+            class="input input-bordered w-1/2"
+            bind:value={values[field.keyFrom]}
+            placeholder="From"
+          />
+          <input
+            type="date"
+            class="input input-bordered w-1/2"
+            bind:value={values[field.keyTo]}
+            placeholder="To"
+          />
         </div>
       </div>
     {:else if field.type === 'checkbox'}

@@ -10,19 +10,28 @@
   let currentPage = $state(1);
   let totalPages = $state(0);
   let loading = $state(false);
-  let filters = $state<{ country?: string; year?: number }>({});
+  let filters = $state<{ country?: string; startDateFrom?: string; startDateTo?: string; upcoming?: boolean }>({});
   let availableCountries = $state<string[]>([]);
-  let availableYears = $state<number[]>([]);
 
   async function loadFestivals() {
     loading = true;
     try {
-      const data = await getFestivals(currentPage, 20, filters);
+      const params: Record<string, any> = {
+        page: currentPage,
+        perPage: 20,
+      };
+      if (filters.country) params.country = filters.country;
+      if (filters.startDateFrom) params.startDateFrom = filters.startDateFrom;
+      if (filters.startDateTo) params.startDateTo = filters.startDateTo;
+
+      const data = await getFestivals(params);
       items = data.items;
       totalPages = data.totalPages;
-      if (items.length > 0) {
-        availableCountries = [...new Set(items.map(i => i.country).filter(Boolean))].sort();
-        availableYears = [...new Set(items.map(i => i.year_founded).filter(Boolean))].sort((a, b) => a - b);
+
+      // Загружаем список стран только один раз при первом получении данных
+      if (availableCountries.length === 0 && data.items.length > 0) {
+        const countries = [...new Set(data.items.map(i => i.country).filter(Boolean))].sort();
+        availableCountries = countries;
       }
     } catch (e) {
       console.error('Failed to load festivals', e);
@@ -33,8 +42,10 @@
 
   function handleApply(newFilters: Record<string, any>) {
     filters = {
-      country: newFilters.country || undefined,
-      year: newFilters.year ? Number(newFilters.year) : undefined
+      country: newFilters.country,
+      startDateFrom: newFilters.startDateFrom,
+      startDateTo: newFilters.startDateTo,
+      upcoming: newFilters.upcoming,
     };
     currentPage = 1;
     loadFestivals();
@@ -61,10 +72,10 @@
 <FilterBar
   fields={[
     { type: 'country', label: 'Country', key: 'country' },
-    { type: 'year', label: 'Year founded', key: 'year' }
+    { type: 'dateRange', label: 'Start date', keyFrom: 'startDateFrom', keyTo: 'startDateTo' },
+    { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' }
   ]}
   {availableCountries}
-  {availableYears}
   onApply={handleApply}
   onReset={handleReset}
   initialValues={filters}
