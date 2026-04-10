@@ -7,6 +7,18 @@
   let festival = $state<Festival | null>(null);
   let loading = $state(true);
 
+  function formatDate(dateStr?: string): string {
+    if (!dateStr) return 'N/A';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime()) || date < today) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+
   onMount(async () => {
     const id = page.params.id;
     if (id) {
@@ -39,6 +51,7 @@
           <p><span class="font-semibold">Country:</span> {festival.country}</p>
           <p><span class="font-semibold">City:</span> {festival.city}</p>
           <p><span class="font-semibold">Founded:</span> {festival.year_founded}</p>
+          <p><span class="font-semibold">Start date:</span> {formatDate(festival.start_date)}</p>
           {#if festival.website}
             <p><span class="font-semibold">Website:</span> <a href={festival.website} target="_blank" class="link link-primary">{festival.website}</a></p>
           {/if}

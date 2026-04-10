@@ -7,6 +7,18 @@
   let conference = $state<Conference | null>(null);
   let loading = $state(true);
 
+  function formatDate(dateStr?: string): string {
+    if (!dateStr) return 'N/A';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime()) || date < today) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
+
   onMount(async () => {
     const id = page.params.id;
     if (id) {
@@ -32,7 +44,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <p><span class="font-semibold">Date:</span> {conference.event_date}</p>
+          <p><span class="font-semibold">Date:</span> {formatDate(conference.start_date)}</p>
           <p><span class="font-semibold">Location:</span> {conference.city}, {conference.country}</p>
           {#if conference.organized}
             <p><span class="font-semibold">Organized by:</span> {conference.organized}</p>

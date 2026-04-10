@@ -13,6 +13,8 @@ export interface Festival {
   short_description?: string;
   slug?: string;
   website?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface Partner {
@@ -31,7 +33,7 @@ export interface Conference {
   id: string;
   external_id?: string;
   event_name: string;
-  event_date: string;
+  start_date?: string;
   city: string;
   country: string;
   description?: string;
