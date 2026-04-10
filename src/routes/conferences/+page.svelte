@@ -10,13 +10,18 @@
   let currentPage = $state(1);
   let totalPages = $state(0);
   let loading = $state(false);
-  let filters = $state<{ country?: string; startDateFrom?: string; startDateTo?: string; upcoming?: boolean }>({});
+  let filters = $state<{
+    country?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+    upcoming?: boolean;
+  }>({});
   let availableCountries = $state<string[]>([]);
 
   async function loadAllCountries() {
     try {
-      // Загружаем все конференции без пагинации только для получения списка стран
-      const data = await getConferences({ perPage: 500 });
+      // Загружаем все конференции один раз, чтобы получить полный список стран
+      const data = await getConferences(1, 500);
       const uniqueCountries = [...new Set(data.items.map(i => i.country).filter(Boolean))].sort();
       availableCountries = uniqueCountries;
     } catch (e) {
@@ -27,15 +32,12 @@
   async function loadConferences() {
     loading = true;
     try {
-      const params: Record<string, any> = {
-        page: currentPage,
-        perPage: 20,
-      };
-      if (filters.country) params.country = filters.country;
-      if (filters.startDateFrom) params.startDateFrom = filters.startDateFrom;
-      if (filters.startDateTo) params.startDateTo = filters.startDateTo;
+      const data = await getConferences(currentPage, 20, {
+        country: filters.country,
+        startDateFrom: filters.startDateFrom,
+        startDateTo: filters.startDateTo,
+      });
 
-      const data = await getConferences(params);
       items = data.items;
       totalPages = data.totalPages;
     } catch (e) {
@@ -79,7 +81,7 @@
   fields={[
     { type: 'country', label: 'Country', key: 'country' },
     { type: 'dateRange', label: 'Start date', keyFrom: 'startDateFrom', keyTo: 'startDateTo' },
-    { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' }
+    { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' },
   ]}
   {availableCountries}
   onApply={handleApply}

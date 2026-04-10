@@ -10,27 +10,29 @@
   let currentPage = $state(1);
   let totalPages = $state(0);
   let loading = $state(false);
-  let filters = $state<{ country?: string; startDateFrom?: string; startDateTo?: string; upcoming?: boolean }>({});
+  let filters = $state<{
+    country?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+    upcoming?: boolean;
+  }>({});
   let availableCountries = $state<string[]>([]);
 
   async function loadFestivals() {
     loading = true;
     try {
-      const params: Record<string, any> = {
-        page: currentPage,
-        perPage: 20,
-      };
-      if (filters.country) params.country = filters.country;
-      if (filters.startDateFrom) params.startDateFrom = filters.startDateFrom;
-      if (filters.startDateTo) params.startDateTo = filters.startDateTo;
+      const data = await getFestivals(currentPage, 20, {
+        country: filters.country,
+        startDateFrom: filters.startDateFrom,
+        startDateTo: filters.startDateTo,
+      });
 
-      const data = await getFestivals(params);
       items = data.items;
       totalPages = data.totalPages;
 
-      // Загружаем список стран только один раз при первом получении данных
-      if (availableCountries.length === 0 && data.items.length > 0) {
-        const countries = [...new Set(data.items.map(i => i.country).filter(Boolean))].sort();
+      // Пополняем список стран при первой загрузке
+      if (availableCountries.length === 0 && items.length > 0) {
+        const countries = [...new Set(items.map(i => i.country).filter(Boolean))].sort();
         availableCountries = countries;
       }
     } catch (e) {
@@ -73,7 +75,7 @@
   fields={[
     { type: 'country', label: 'Country', key: 'country' },
     { type: 'dateRange', label: 'Start date', keyFrom: 'startDateFrom', keyTo: 'startDateTo' },
-    { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' }
+    { type: 'checkbox', label: 'Only upcoming', key: 'upcoming' },
   ]}
   {availableCountries}
   onApply={handleApply}
