@@ -21,7 +21,7 @@ export async function getFestivals(
 
   const filter = conditions.length > 0 ? conditions.join(' && ') : undefined;
 
-  return apiClient<Festival>('festivals', { page, perPage, filter });
+  return apiClient<Festival>('festivals', { page, perPage, filter, sort });
 }
 
 export async function getFestivalById(id: string) {

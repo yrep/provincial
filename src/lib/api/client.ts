@@ -1,3 +1,4 @@
+// client.ts
 import { PUBLIC_API_URL, PUBLIC_API_PATH } from '$env/static/public';
 import { dlog } from '$lib/utils/dlog';
 
@@ -5,6 +6,7 @@ interface ApiOptions {
   page?: number;
   perPage?: number;
   filter?: string;
+  sort?: string;
 }
 
 export async function apiClient<T>(
@@ -15,6 +17,7 @@ export async function apiClient<T>(
   if (options.page) url.searchParams.set('page', String(options.page));
   if (options.perPage) url.searchParams.set('perPage', String(options.perPage));
   if (options.filter) url.searchParams.set('filter', options.filter);
+  if (options.sort) url.searchParams.set('sort', options.sort);   // <-- добавили
 
   dlog('Запрос:', url.toString());
   const response = await fetch(url);
