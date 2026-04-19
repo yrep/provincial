@@ -7,7 +7,12 @@ interface FestivalFilters {
   startDateTo?: string;
 }
 
-export async function getFestivals(page = 1, perPage = 20, filters?: FestivalFilters) {
+export async function getFestivals(
+  page = 1,
+  perPage = 20,
+  filters?: FestivalFilters,
+  sort: string = 'start_date'
+) {
   const conditions: string[] = [];
 
   if (filters?.country) conditions.push(`country = '${filters.country}'`);
